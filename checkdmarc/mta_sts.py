@@ -133,7 +133,7 @@ mta_sts_tags = OrderedDict(
 STS_TAG_VALUE_REGEX = re.compile(MTA_STS_TAG_VALUE_REGEX_STRING, re.IGNORECASE)
 
 
-def query_mta_sts_record(domain: str,
+async def query_mta_sts_record(domain: str,
                          nameservers: list[str] = None,
                          resolver: dns.resolver.Resolver = None,
                          timeout: float = 2.0) -> OrderedDict:
@@ -168,7 +168,7 @@ def query_mta_sts_record(domain: str,
     unrelated_records = []
 
     try:
-        records = query_dns(target, "TXT", nameservers=nameservers,
+        records = await query_dns(target, "TXT", nameservers=nameservers,
                             resolver=resolver, timeout=timeout)
         for record in records:
             if record.startswith(txt_prefix):
@@ -190,7 +190,7 @@ def query_mta_sts_record(domain: str,
 
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
         try:
-            records = query_dns(domain, "TXT",
+            records = await query_dns(domain, "TXT",
                                 nameservers=nameservers, resolver=resolver,
                                 timeout=timeout)
             for record in records:
@@ -404,7 +404,7 @@ def parse_mta_sts_policy(policy: str) -> OrderedDict:
     return OrderedDict(policy=parsed_policy, warnings=warnings)
 
 
-def check_mta_sts(domain: str,
+async def check_mta_sts(domain: str,
                   nameservers: list[str] = None,
                   resolver: dns.resolver.Resolver = None,
                   timeout: float = 2.0) -> OrderedDict:
@@ -435,7 +435,7 @@ def check_mta_sts(domain: str,
     domain = domain.lower()
     mta_sts_results = OrderedDict([("valid", True)])
     try:
-        mta_sts_record = query_mta_sts_record(
+        mta_sts_record = await query_mta_sts_record(
             domain,
             nameservers=nameservers, resolver=resolver,
             timeout=timeout)

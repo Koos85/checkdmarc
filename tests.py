@@ -3,6 +3,7 @@
 
 """Automated tests"""
 
+import asyncio
 import unittest
 from collections import OrderedDict
 
@@ -23,7 +24,7 @@ class Test(unittest.TestCase):
     def testKnownGood(self):
         """Domains with known good STARTTLS support, SPF and DMARC records"""
 
-        results = checkdmarc.check_domains(known_good_domains)
+        results = asyncio.run(checkdmarc.check_domains(known_good_domains))
         for result in results:
             spf_error = None
             dmarc_error = None
@@ -55,7 +56,7 @@ class Test(unittest.TestCase):
         ]
 
         for example in examples:
-            parsed_record = checkdmarc.dmarc.parse_dmarc_record(example, "")
+            parsed_record = asyncio.run(checkdmarc.dmarc.parse_dmarc_record(example, ""))
             self.assertIsInstance(parsed_record, OrderedDict)
 
     def testGetBaseDomain(self):
@@ -90,7 +91,7 @@ class Test(unittest.TestCase):
         spf_record = "v=spf1 IP4:147.75.8.208 -ALL"
         domain = "example.no"
 
-        results = checkdmarc.spf.parse_spf_record(spf_record, domain)
+        results = asyncio.run(checkdmarc.spf.parse_spf_record(spf_record, domain))
 
         self.assertEqual(len(results["warnings"]), 0)
 
@@ -99,7 +100,7 @@ class Test(unittest.TestCase):
 
         rec = '"v=spf1 ip4:147.75.8.208 " "include:_spf.salesforce.com -all"'
 
-        parsed_record = checkdmarc.spf.parse_spf_record(rec, "example.com")
+        parsed_record = asyncio.run(checkdmarc.spf.parse_spf_record(rec, "example.com"))
 
         self.assertEqual(parsed_record["parsed"]["all"], "fail")
 
@@ -108,13 +109,13 @@ class Test(unittest.TestCase):
         rec = "v=spf1 ip4:213.5.39.110 -all MS=83859DAEBD1978F9A7A67D3"
         domain = "avd.dk"
 
-        parsed_record = checkdmarc.spf.parse_spf_record(rec, domain)
+        parsed_record = asyncio.run(checkdmarc.spf.parse_spf_record(rec, domain))
         self.assertEqual(len(parsed_record["warnings"]), 1)
 
     @unittest.skip
     def testDNSSEC(self):
         """Test known good DNSSEC"""
-        self.assertEqual(checkdmarc.dnssec.test_dnssec("fbi.gov"), True)
+        self.assertEqual(asyncio.run(checkdmarc.dnssec.test_dnssec("fbi.gov")), True)
 
     def testIncludeMissingSPF(self):
         """SPF records that include domains that are missing SPF records
@@ -222,7 +223,7 @@ class Test(unittest.TestCase):
 
         spf_record = '"v=spf1 mx ~all"'
         domain = "seanthegeek.net"
-        results = checkdmarc.spf.parse_spf_record(spf_record, domain)
+        results = asyncio.run(checkdmarc.spf.parse_spf_record(spf_record, domain))
         self.assertIn("{0} does not have any MX records".format(domain),
                       results["warnings"])
 
@@ -232,7 +233,7 @@ class Test(unittest.TestCase):
 
         spf_record = '"v=spf1 a ~all"'
         domain = "cardinalhealth.net"
-        results = checkdmarc.spf.parse_spf_record(spf_record, domain)
+        results = asyncio.run(checkdmarc.spf.parse_spf_record(spf_record, domain))
         self.assertIn("cardinalhealth.net does not have any A/AAAA records",
                       results["warnings"])
 
@@ -244,7 +245,7 @@ class Test(unittest.TestCase):
                        "rua=mailto:eits.dmarcrua@energy.gov; " \
                        "ruf=mailto:eits.dmarcruf@energy.gov"
         domain = "energy.gov"
-        results = checkdmarc.dmarc.parse_dmarc_record(dmarc_record, domain)
+        results = asyncio.run(checkdmarc.dmarc.parse_dmarc_record(dmarc_record, domain))
         self.assertIn("pct value is less than 100",
                       results["warnings"][0])
 

@@ -41,7 +41,7 @@ limitations under the License."""
 __version__ = checkdmarc._constants.__version__
 
 
-def check_domains(domains: list[str], parked: bool = False,
+async def check_domains(domains: list[str], parked: bool = False,
                   approved_nameservers: list[str] = None,
                   approved_mx_hostnames: bool = None,
                   skip_tls: bool = False,
@@ -102,13 +102,13 @@ def check_domains(domains: list[str], parked: bool = False,
             [("domain", domain), ("base_domain", get_base_domain(domain)),
              ("dnssec", None), ("ns", []), ("mx", [])])
 
-        domain_results["dnssec"] = test_dnssec(
+        domain_results["dnssec"] = await test_dnssec(
             domain,
             nameservers=nameservers,
             timeout=timeout
             )
 
-        domain_results["ns"] = check_ns(
+        domain_results["ns"] = await check_ns(
             domain,
             approved_nameservers=approved_nameservers,
             nameservers=nameservers,
@@ -116,13 +116,13 @@ def check_domains(domains: list[str], parked: bool = False,
             )
 
         mta_sts_mx_patterns = None
-        domain_results["mta_sts"] = check_mta_sts(domain,
+        domain_results["mta_sts"] = await check_mta_sts(domain,
                                                   nameservers=nameservers,
                                                   resolver=resolver,
                                                   timeout=timeout)
         if domain_results["mta_sts"]["valid"]:
             mta_sts_mx_patterns = domain_results["mta_sts"]["policy"]["mx"]
-        domain_results["mx"] = check_mx(
+        domain_results["mx"] = await check_mx(
             domain,
             approved_mx_hostnames=approved_mx_hostnames,
             mta_sts_mx_patterns=mta_sts_mx_patterns,
@@ -132,7 +132,7 @@ def check_domains(domains: list[str], parked: bool = False,
             timeout=timeout
             )
 
-        domain_results["spf"] = check_spf(
+        domain_results["spf"] = await check_spf(
             domain,
             parked=parked,
             nameservers=nameservers,
@@ -140,7 +140,7 @@ def check_domains(domains: list[str], parked: bool = False,
             timeout=timeout
             )
 
-        domain_results["dmarc"] = check_dmarc(
+        domain_results["dmarc"] = await check_dmarc(
             domain,
             parked=parked,
             include_dmarc_tag_descriptions=include_tag_descriptions,
@@ -149,7 +149,7 @@ def check_domains(domains: list[str], parked: bool = False,
             timeout=timeout
             )
 
-        domain_results["smtp_tls_reporting"] = check_smtp_tls_reporting(
+        domain_results["smtp_tls_reporting"] = await check_smtp_tls_reporting(
             domain,
             nameservers=nameservers,
             resolver=resolver,
@@ -157,7 +157,7 @@ def check_domains(domains: list[str], parked: bool = False,
         )
 
         if bimi_selector is not None:
-            domain_results["bimi"] = check_bimi(
+            domain_results["bimi"] = await check_bimi(
                 domain,
                 selector=bimi_selector,
                 include_tag_descriptions=include_tag_descriptions,
@@ -175,7 +175,7 @@ def check_domains(domains: list[str], parked: bool = False,
     return results
 
 
-def check_ns(domain: str,
+async def check_ns(domain: str,
              approved_nameservers: list[str] = None,
              nameservers: list[str] = None,
              resolver: dns.resolver.Resolver = None,
@@ -204,7 +204,7 @@ def check_ns(domain: str,
               - ``error``  - An error message
     """
     try:
-        ns_results = get_nameservers(
+        ns_results = await get_nameservers(
             domain,
             approved_nameservers=approved_nameservers,
             nameservers=nameservers, resolver=resolver,

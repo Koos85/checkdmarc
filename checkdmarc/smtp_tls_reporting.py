@@ -133,7 +133,7 @@ smtp_rpt_tags = OrderedDict(
 )
 
 
-def query_smtp_tls_reporting_record(domain: str,
+async def query_smtp_tls_reporting_record(domain: str,
                                     nameservers: list[str] = None,
                                     resolver: dns.resolver.Resolver = None,
                                     timeout: float = 2.0) -> OrderedDict:
@@ -168,7 +168,7 @@ def query_smtp_tls_reporting_record(domain: str,
     unrelated_records = []
 
     try:
-        records = query_dns(target, "TXT", nameservers=nameservers,
+        records = await query_dns(target, "TXT", nameservers=nameservers,
                             resolver=resolver, timeout=timeout)
         for record in records:
             if record.startswith(txt_prefix):
@@ -190,7 +190,7 @@ def query_smtp_tls_reporting_record(domain: str,
 
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
         try:
-            records = query_dns(domain, "TXT",
+            records = await query_dns(domain, "TXT",
                                 nameservers=nameservers, resolver=resolver,
                                 timeout=timeout)
             for record in records:
@@ -296,7 +296,7 @@ def parse_smtp_tls_reporting_record(
     return OrderedDict(tags=tags, warnings=warnings)
 
 
-def check_smtp_tls_reporting(domain: str,
+async def check_smtp_tls_reporting(domain: str,
                              nameservers: list[str] = None,
                              resolver: dns.resolver.Resolver = None,
                              timeout: float = 2.0) -> OrderedDict:
@@ -327,7 +327,7 @@ def check_smtp_tls_reporting(domain: str,
     domain = domain.lower()
     smtp_tls_reporting_results = OrderedDict([("valid", True)])
     try:
-        smtp_tls_reporting_record = query_smtp_tls_reporting_record(
+        smtp_tls_reporting_record = await query_smtp_tls_reporting_record(
             domain,
             nameservers=nameservers, resolver=resolver,
             timeout=timeout)

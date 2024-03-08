@@ -148,7 +148,7 @@ bimi_tags = OrderedDict(
 )
 
 
-def _query_bimi_record(domain: str, selector: str = "default",
+async def _query_bimi_record(domain: str, selector: str = "default",
                        nameservers: list[str] = None,
                        resolver: dns.resolver.Resolver = None,
                        timeout: float = 2.0):
@@ -174,7 +174,7 @@ def _query_bimi_record(domain: str, selector: str = "default",
     unrelated_records = []
 
     try:
-        records = query_dns(target, "TXT", nameservers=nameservers,
+        records = await query_dns(target, "TXT", nameservers=nameservers,
                             resolver=resolver, timeout=timeout)
         for record in records:
             if record.startswith(txt_prefix):
@@ -196,7 +196,7 @@ def _query_bimi_record(domain: str, selector: str = "default",
 
     except dns.resolver.NoAnswer:
         try:
-            records = query_dns(domain, "TXT",
+            records = await query_dns(domain, "TXT",
                                 nameservers=nameservers, resolver=resolver,
                                 timeout=timeout)
             for record in records:
@@ -220,7 +220,7 @@ def _query_bimi_record(domain: str, selector: str = "default",
     return bimi_record
 
 
-def query_bimi_record(domain: str, selector: str = "default",
+async def query_bimi_record(domain: str, selector: str = "default",
                       nameservers: list[str] = None,
                       resolver: dns.resolver.Resolver = None,
                       timeout: float = 2.0) -> OrderedDict:
@@ -251,11 +251,11 @@ def query_bimi_record(domain: str, selector: str = "default",
     warnings = []
     base_domain = get_base_domain(domain)
     location = domain.lower()
-    record = _query_bimi_record(domain, selector=selector,
+    record = await _query_bimi_record(domain, selector=selector,
                                 nameservers=nameservers, resolver=resolver,
                                 timeout=timeout)
     try:
-        root_records = query_dns(domain, "TXT",
+        root_records = await query_dns(domain, "TXT",
                                  nameservers=nameservers, resolver=resolver,
                                  timeout=timeout)
         for root_record in root_records:
@@ -269,7 +269,7 @@ def query_bimi_record(domain: str, selector: str = "default",
         pass
 
     if record is None and domain != base_domain and selector != "default":
-        record = _query_bimi_record(base_domain,
+        record = await _query_bimi_record(base_domain,
                                     nameservers=nameservers, resolver=resolver,
                                     timeout=timeout)
         location = base_domain
@@ -373,7 +373,7 @@ def parse_bimi_record(
     return OrderedDict(tags=tags, warnings=warnings)
 
 
-def check_bimi(domain: str, selector: str = "default",
+async def check_bimi(domain: str, selector: str = "default",
                include_tag_descriptions: bool = False,
                nameservers: list[str] = None,
                resolver: dns.resolver.Resolver = None,
@@ -412,7 +412,7 @@ def check_bimi(domain: str, selector: str = "default",
     bimi_results = OrderedDict([("record", None), ("valid", True)])
     selector = selector.lower()
     try:
-        bimi_query = query_bimi_record(
+        bimi_query = await query_bimi_record(
             domain,
             selector=selector,
             nameservers=nameservers, resolver=resolver,

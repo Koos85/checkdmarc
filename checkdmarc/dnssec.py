@@ -32,7 +32,7 @@ DNSKEY_CACHE = ExpiringDict(max_len=200000, max_age_seconds=1800)
 TLSA_CACHE = ExpiringDict(max_len=200000, max_age_seconds=1800)
 
 
-def get_dnskey(domain: str, nameservers: list[str] = None,
+async def get_dnskey(domain: str, nameservers: list[str] = None,
                timeout: float = 2.0, cache: ExpiringDict = None):
     """
     Get a DNSKEY RRSet on the given domain
@@ -62,14 +62,14 @@ def get_dnskey(domain: str, nameservers: list[str] = None,
                                      want_dnssec=True)
     for nameserver in nameservers:
         try:
-            response = dns.query.udp(request, nameserver, timeout=timeout)
+            response = await dns.asyncquery.udp(request, nameserver, timeout=timeout)
             if response is not None:
                 answer = response.answer
                 if len(answer) == 0:
                     logging.debug(f"No DNSKEY records found at {domain}")
                     base_domain = get_base_domain(domain)
                     if domain != base_domain:
-                        return get_dnskey(base_domain,
+                        return await get_dnskey(base_domain,
                                           nameservers=nameservers,
                                           timeout=timeout)
                     cache[domain] = None
@@ -84,7 +84,7 @@ def get_dnskey(domain: str, nameservers: list[str] = None,
             logging.debug(f"DNSKEY query error: {e}")
 
 
-def test_dnssec(domain: str,
+async def test_dnssec(domain: str,
                 nameservers: list[str] = None,
                 timeout: float = 2.0,
                 cache: ExpiringDict = None) -> bool:
@@ -108,7 +108,7 @@ def test_dnssec(domain: str,
     if domain in cache:
         return DNSSEC_CACHE[cache]
 
-    key = get_dnskey(domain, nameservers=nameservers, timeout=timeout)
+    key = await get_dnskey(domain, nameservers=nameservers, timeout=timeout)
     if key is None:
         return False
     rdatatypes = [dns.rdatatype.DNSKEY,
@@ -122,7 +122,7 @@ def test_dnssec(domain: str,
                                          want_dnssec=True)
         for nameserver in nameservers:
             try:
-                response = dns.query.udp(request, nameserver,
+                response = await dns.asyncquery.udp(request, nameserver,
                                          timeout=timeout)
                 if response is not None:
                     answer = response.answer
@@ -141,7 +141,7 @@ def test_dnssec(domain: str,
     return False
 
 
-def get_tlsa_records(hostname: str, nameservers: list[str] = None,
+async def get_tlsa_records(hostname: str, nameservers: list[str] = None,
                      timeout: float = 2.0, port: int = 25,
                      protocol: str = "tcp",
                      cache: ExpiringDict = None) -> list[str]:
@@ -175,12 +175,12 @@ def get_tlsa_records(hostname: str, nameservers: list[str] = None,
                                      want_dnssec=True)
     for nameserver in nameservers:
         try:
-            response = dns.query.udp(request, nameserver, timeout=timeout)
+            response = await dns.asyncquery.udp(request, nameserver, timeout=timeout)
             if response is not None:
                 answer = response.answer
                 if len(answer) != 2:
                     return tlsa_records
-                dnskey = get_dnskey(
+                dnskey = await get_dnskey(
                     domain=hostname,
                     nameservers=nameservers,
                     timeout=timeout

@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 import dns
 import dns.resolver
+import dns.asyncresolver
 import re
 from collections import OrderedDict
 
@@ -74,7 +75,7 @@ def get_base_domain(domain: str) -> str:
     return psl.privatesuffix(domain) or domain
 
 
-def query_dns(domain: str, record_type: str, nameservers: list[str] = None,
+async def query_dns(domain: str, record_type: str, nameservers: list[str] = None,
               resolver: dns.resolver.Resolver = None,
               timeout: float = 2.0, cache: ExpiringDict = None) -> list[str]:
     """
@@ -102,7 +103,7 @@ def query_dns(domain: str, record_type: str, nameservers: list[str] = None,
         if records:
             return records
     if not resolver:
-        resolver = dns.resolver.Resolver()
+        resolver = dns.asyncresolver.Resolver()
         timeout = float(timeout)
         if nameservers is not None:
             resolver.nameservers = nameservers
@@ -111,7 +112,7 @@ def query_dns(domain: str, record_type: str, nameservers: list[str] = None,
     if record_type == "TXT":
         resource_records = list(map(
             lambda r: r.strings,
-            resolver.resolve(domain, record_type, lifetime=timeout)))
+            (await resolver.resolve(domain, record_type, lifetime=timeout))))
         _resource_record = [
             resource_record[0][:0].join(resource_record)
             for resource_record in resource_records if resource_record]
@@ -125,14 +126,14 @@ def query_dns(domain: str, record_type: str, nameservers: list[str] = None,
     else:
         records = list(map(
             lambda r: r.to_text().replace('"', '').rstrip("."),
-            resolver.resolve(domain, record_type, lifetime=timeout)))
+            (await resolver.resolve(domain, record_type))))
     if type(cache) is ExpiringDict:
         cache[cache_key] = records
 
     return records
 
 
-def get_a_records(domain: str, nameservers: list[str] = None,
+async def get_a_records(domain: str, nameservers: list[str] = None,
                   resolver: dns.resolver.Resolver = None,
                   timeout: float = 2.0) -> list[str]:
     """
@@ -157,8 +158,8 @@ def get_a_records(domain: str, nameservers: list[str] = None,
     for qt in qtypes:
         try:
             logging.debug(f"Getting {qt} records for {domain}")
-            addresses += query_dns(domain, qt, nameservers=nameservers,
-                                   resolver=resolver, timeout=timeout)
+            addresses += (await query_dns(domain, qt, nameservers=nameservers,
+                                          resolver=resolver, timeout=timeout))
         except dns.resolver.NXDOMAIN:
             raise DNSExceptionNXDOMAIN(f"The domain {domain} does not exist")
         except dns.resolver.NoAnswer:
@@ -171,7 +172,7 @@ def get_a_records(domain: str, nameservers: list[str] = None,
     return addresses
 
 
-def get_reverse_dns(ip_address: str, nameservers: list[str] = None,
+async def get_reverse_dns(ip_address: str, nameservers: list[str] = None,
                     resolver: dns.resolver.Resolver = None,
                     timeout: float = 2.0) -> list[str]:
     """
@@ -194,7 +195,7 @@ def get_reverse_dns(ip_address: str, nameservers: list[str] = None,
     try:
         name = str(dns.reversename.from_address(ip_address))
         logging.debug(f"Getting PTR records for {ip_address}")
-        hostnames = query_dns(name, "PTR", nameservers=nameservers,
+        hostnames = await query_dns(name, "PTR", nameservers=nameservers,
                               resolver=resolver, timeout=timeout)
     except dns.resolver.NXDOMAIN:
         return []
@@ -204,7 +205,7 @@ def get_reverse_dns(ip_address: str, nameservers: list[str] = None,
     return hostnames
 
 
-def get_txt_records(domain: str, nameservers: list[str] = None,
+async def get_txt_records(domain: str, nameservers: list[str] = None,
                     resolver: dns.resolver.Resolver = None,
                     timeout: float = 2.0) -> list[str]:
     """
@@ -225,7 +226,7 @@ def get_txt_records(domain: str, nameservers: list[str] = None,
 
     """
     try:
-        records = query_dns(domain, "TXT", nameservers=nameservers,
+        records = await query_dns(domain, "TXT", nameservers=nameservers,
                             resolver=resolver, timeout=timeout)
     except dns.resolver.NXDOMAIN:
         raise DNSExceptionNXDOMAIN(f"The domain {domain} does not exist")
@@ -238,7 +239,7 @@ def get_txt_records(domain: str, nameservers: list[str] = None,
     return records
 
 
-def get_nameservers(domain: str, approved_nameservers: list[str] = None,
+async def get_nameservers(domain: str, approved_nameservers: list[str] = None,
                     nameservers: list[str] = None,
                     resolver: dns.resolver.Resolver = None,
                     timeout: float = 2.0) -> dict:
@@ -264,7 +265,7 @@ def get_nameservers(domain: str, approved_nameservers: list[str] = None,
     ns_records = []
     try:
 
-        ns_records = query_dns(domain, "NS",
+        ns_records = await query_dns(domain, "NS",
                                nameservers=nameservers,
                                resolver=resolver, timeout=timeout)
     except dns.resolver.NXDOMAIN:
@@ -291,7 +292,7 @@ def get_nameservers(domain: str, approved_nameservers: list[str] = None,
     return OrderedDict([("hostnames", ns_records), ("warnings", warnings)])
 
 
-def get_mx_records(domain: str, nameservers: list[str] = None,
+async def get_mx_records(domain: str, nameservers: list[str] = None,
                    resolver: dns.resolver.Resolver = None,
                    timeout: float = 2.0) -> list[OrderedDict]:
     """
@@ -315,7 +316,7 @@ def get_mx_records(domain: str, nameservers: list[str] = None,
     hosts = []
     try:
         logging.debug(f"Checking for MX records on {domain}")
-        answers = query_dns(domain, "MX", nameservers=nameservers,
+        answers = await query_dns(domain, "MX", nameservers=nameservers,
                             resolver=resolver, timeout=timeout)
         if answers == ['0 ']:
             logging.debug("\"No Service\" MX record found")
