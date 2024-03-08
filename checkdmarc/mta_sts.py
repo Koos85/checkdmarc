@@ -134,9 +134,9 @@ STS_TAG_VALUE_REGEX = re.compile(MTA_STS_TAG_VALUE_REGEX_STRING, re.IGNORECASE)
 
 
 async def query_mta_sts_record(domain: str,
-                         nameservers: list[str] = None,
-                         resolver: dns.resolver.Resolver = None,
-                         timeout: float = 2.0) -> OrderedDict:
+                               nameservers: list[str] = None,
+                               resolver: dns.resolver.Resolver = None,
+                               timeout: float = 2.0) -> OrderedDict:
     """
     Queries DNS for an MTA-STS record
 
@@ -169,7 +169,7 @@ async def query_mta_sts_record(domain: str,
 
     try:
         records = await query_dns(target, "TXT", nameservers=nameservers,
-                            resolver=resolver, timeout=timeout)
+                                  resolver=resolver, timeout=timeout)
         for record in records:
             if record.startswith(txt_prefix):
                 sts_record_count += 1
@@ -191,8 +191,8 @@ async def query_mta_sts_record(domain: str,
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
         try:
             records = await query_dns(domain, "TXT",
-                                nameservers=nameservers, resolver=resolver,
-                                timeout=timeout)
+                                      nameservers=nameservers,
+                                      resolver=resolver, timeout=timeout)
             for record in records:
                 if record.startswith(txt_prefix):
                     raise MTASTSRecordInWrongLocation(
@@ -405,9 +405,9 @@ def parse_mta_sts_policy(policy: str) -> OrderedDict:
 
 
 async def check_mta_sts(domain: str,
-                  nameservers: list[str] = None,
-                  resolver: dns.resolver.Resolver = None,
-                  timeout: float = 2.0) -> OrderedDict:
+                        nameservers: list[str] = None,
+                        resolver: dns.resolver.Resolver = None,
+                        timeout: float = 2.0) -> OrderedDict:
     """
     Returns a dictionary with a parsed MTA-STS policy or an error.
 

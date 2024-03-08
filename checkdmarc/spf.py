@@ -130,9 +130,9 @@ spf_qualifiers = {
 
 
 async def query_spf_record(domain: str,
-                     nameservers: list[str] = None,
-                     resolver: dns.resolver.Resolver = None,
-                     timeout: float = 2.0) -> OrderedDict:
+                           nameservers: list[str] = None,
+                           resolver: dns.resolver.Resolver = None,
+                           timeout: float = 2.0) -> OrderedDict:
     """
     Queries DNS for an SPF record
 
@@ -158,8 +158,9 @@ async def query_spf_record(domain: str,
     spf_txt_records = []
     try:
         spf_type_records += (await query_dns(domain, "SPF",
-                                      nameservers=nameservers,
-                                      resolver=resolver, timeout=timeout))
+                                             nameservers=nameservers,
+                                             resolver=resolver,
+                                             timeout=timeout))
     except (dns.resolver.NoAnswer, Exception):
         pass
 
@@ -172,7 +173,7 @@ async def query_spf_record(domain: str,
         warnings.append(message)
     try:
         answers = await query_dns(domain, "TXT", nameservers=nameservers,
-                            resolver=resolver, timeout=timeout)
+                                  resolver=resolver, timeout=timeout)
         spf_record = None
         for record in answers:
             if record.startswith(txt_prefix):
@@ -315,7 +316,8 @@ async def parse_spf_record(
                 if value == "":
                     value = domain
                 a_records = await get_a_records(value, nameservers=nameservers,
-                                          resolver=resolver, timeout=timeout)
+                                                resolver=resolver,
+                                                timeout=timeout)
                 if len(a_records) == 0:
                     raise _SPFMissingRecords(
                         f"{value.lower()} does not have any A/AAAA records")
@@ -326,7 +328,8 @@ async def parse_spf_record(
                 if value == "":
                     value = domain
                 mx_hosts = await get_mx_records(value, nameservers=nameservers,
-                                          resolver=resolver, timeout=timeout)
+                                                resolver=resolver,
+                                                timeout=timeout)
                 if len(mx_hosts) == 0:
                     raise _SPFMissingRecords(
                         f"{value.lower()} does not have any MX records")
@@ -345,18 +348,18 @@ async def parse_spf_record(
                     raise SPFRedirectLoop(f"Redirect loop: {value.lower()}")
                 seen.append(value.lower())
                 try:
-                    redirect_record = await query_spf_record(value,
+                    redirect_ = await query_spf_record(value,
                                                        nameservers=nameservers,
                                                        resolver=resolver,
                                                        timeout=timeout)
-                    redirect_record = redirect_record["record"]
+                    redirect_record = redirect_["record"]
                     redirect = await parse_spf_record(redirect_record, value,
-                                                seen=seen,
-                                                recursion=recursion + [
-                                                    value.lower()],
-                                                nameservers=nameservers,
-                                                resolver=resolver,
-                                                timeout=timeout)
+                                                      seen=seen,
+                                                      recursion=recursion + [
+                                                            value.lower()],
+                                                      nameservers=nameservers,
+                                                      resolver=resolver,
+                                                      timeout=timeout)
                     lookup_mechanism_count += redirect["dns_lookups"]
                     void_lookup_mechanism_count += redirect["dns_void_lookups"]
                     if lookup_mechanism_count > 10:
@@ -404,18 +407,18 @@ async def parse_spf_record(
                     parsed["include"].append(include)
                     continue
                 try:
-                    include_record = await query_spf_record(value,
+                    include_ = await query_spf_record(value,
                                                       nameservers=nameservers,
                                                       resolver=resolver,
                                                       timeout=timeout)
-                    include_record = include_record["record"]
+                    include_record = include_["record"]
                     include = await parse_spf_record(include_record, value,
-                                               seen=seen,
-                                               recursion=recursion + [
-                                                   value.lower()],
-                                               nameservers=nameservers,
-                                               resolver=resolver,
-                                               timeout=timeout)
+                                                     seen=seen,
+                                                     recursion=recursion + [
+                                                         value.lower()],
+                                                     nameservers=nameservers,
+                                                     resolver=resolver,
+                                                     timeout=timeout)
                     lookup_mechanism_count += include["dns_lookups"]
                     void_lookup_mechanism_count += include["dns_void_lookups"]
                     if lookup_mechanism_count > 10:
@@ -478,8 +481,8 @@ async def parse_spf_record(
 
 
 async def get_spf_record(domain: str, nameservers: list[str] = None,
-                   resolver: dns.resolver.Resolver = None,
-                   timeout: float = 2.0) -> OrderedDict:
+                         resolver: dns.resolver.Resolver = None,
+                         timeout: float = 2.0) -> OrderedDict:
     """
     Retrieves and parses an SPF record
 
@@ -502,19 +505,20 @@ async def get_spf_record(domain: str, nameservers: list[str] = None,
 
     """
     record = await query_spf_record(domain, nameservers=nameservers,
-                              resolver=resolver, timeout=timeout)
+                                    resolver=resolver, timeout=timeout)
     record = record["record"]
-    parsed_record = await parse_spf_record(record, domain, nameservers=nameservers,
-                                     resolver=resolver, timeout=timeout)
+    parsed_record = await parse_spf_record(record, domain,
+                                           nameservers=nameservers,
+                                           resolver=resolver, timeout=timeout)
     parsed_record["record"] = record
 
     return parsed_record
 
 
 async def check_spf(domain: str, parked: bool = False,
-              nameservers: list[str] = None,
-              resolver: dns.resolver.Resolver = None,
-              timeout: float = 2.0) -> OrderedDict:
+                    nameservers: list[str] = None,
+                    resolver: dns.resolver.Resolver = None,
+                    timeout: float = 2.0) -> OrderedDict:
     """
     Returns a dictionary with a parsed SPF record or an error.
 
@@ -553,11 +557,11 @@ async def check_spf(domain: str, parked: bool = False,
         spf_results["record"] = spf_query["record"]
         spf_results["warnings"] = spf_query["warnings"]
         parsed_spf = await parse_spf_record(spf_results["record"],
-                                      domain,
-                                      parked=parked,
-                                      nameservers=nameservers,
-                                      resolver=resolver,
-                                      timeout=timeout)
+                                            domain,
+                                            parked=parked,
+                                            nameservers=nameservers,
+                                            resolver=resolver,
+                                            timeout=timeout)
 
         spf_results["dns_lookups"] = parsed_spf[
             "dns_lookups"]

@@ -42,15 +42,16 @@ __version__ = checkdmarc._constants.__version__
 
 
 async def check_domains(domains: list[str], parked: bool = False,
-                  approved_nameservers: list[str] = None,
-                  approved_mx_hostnames: bool = None,
-                  skip_tls: bool = False,
-                  bimi_selector: str = None,
-                  include_tag_descriptions: bool = False,
-                  nameservers: list[str] = None,
-                  resolver: dns.resolver.Resolver = None,
-                  timeout: float = 2.0,
-                  wait: float = 0.0) -> Union[OrderedDict, list[OrderedDict]]:
+                        approved_nameservers: list[str] = None,
+                        approved_mx_hostnames: bool = None,
+                        skip_tls: bool = False,
+                        bimi_selector: str = None,
+                        include_tag_descriptions: bool = False,
+                        nameservers: list[str] = None,
+                        resolver: dns.resolver.Resolver = None,
+                        timeout: float = 2.0,
+                        wait: float = 0.0
+                        ) -> Union[OrderedDict, list[OrderedDict]]:
     """
     Check the given domains for SPF and DMARC records, parse them, and return
     them
@@ -116,10 +117,12 @@ async def check_domains(domains: list[str], parked: bool = False,
             )
 
         mta_sts_mx_patterns = None
-        domain_results["mta_sts"] = await check_mta_sts(domain,
-                                                  nameservers=nameservers,
-                                                  resolver=resolver,
-                                                  timeout=timeout)
+        domain_results["mta_sts"] = await check_mta_sts(
+            domain,
+            nameservers=nameservers,
+            resolver=resolver,
+            timeout=timeout
+            )
         if domain_results["mta_sts"]["valid"]:
             mta_sts_mx_patterns = domain_results["mta_sts"]["policy"]["mx"]
         domain_results["mx"] = await check_mx(
@@ -176,10 +179,10 @@ async def check_domains(domains: list[str], parked: bool = False,
 
 
 async def check_ns(domain: str,
-             approved_nameservers: list[str] = None,
-             nameservers: list[str] = None,
-             resolver: dns.resolver.Resolver = None,
-             timeout: float = 2.0) -> OrderedDict:
+                   approved_nameservers: list[str] = None,
+                   nameservers: list[str] = None,
+                   resolver: dns.resolver.Resolver = None,
+                   timeout: float = 2.0) -> OrderedDict:
     """
     Returns a dictionary of nameservers and warnings or a dictionary with an
     empty list and an error.

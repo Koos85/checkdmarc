@@ -266,13 +266,14 @@ def test_starttls(hostname: str,
         raise SMTPError(error)
 
 
-async def get_mx_hosts(domain: str, skip_tls: bool = False,
-                 approved_hostnames: list[str] = None,
-                 mta_sts_mx_patterns: list[str] = None,
-                 parked: bool = False,
-                 nameservers: list[str] = None,
-                 resolver: dns.resolver.Resolver = None,
-                 timeout: float = 2.0):
+async def get_mx_hosts(domain: str,
+                       skip_tls: bool = False,
+                       approved_hostnames: list[str] = None,
+                       mta_sts_mx_patterns: list[str] = None,
+                       parked: bool = False,
+                       nameservers: list[str] = None,
+                       resolver: dns.resolver.Resolver = None,
+                       timeout: float = 2.0):
     """
     Gets MX hostname and their addresses
 
@@ -305,7 +306,7 @@ async def get_mx_hosts(domain: str, skip_tls: bool = False,
     dupe_hostnames = set()
     logging.debug(f"Getting MX records for {domain}")
     mx_records = await get_mx_records(domain, nameservers=nameservers,
-                                resolver=resolver, timeout=timeout)
+                                      resolver=resolver, timeout=timeout)
     for record in mx_records:
         hosts.append(OrderedDict([("preference", record["preference"]),
                                   ("hostname", record["hostname"].lower()),
@@ -344,19 +345,19 @@ async def get_mx_hosts(domain: str, skip_tls: bool = False,
             dnssec = False
             try:
                 dnssec = await test_dnssec(hostname,
-                                     nameservers=nameservers,
-                                     timeout=timeout)
+                                           nameservers=nameservers,
+                                           timeout=timeout)
             except Exception as e:
                 logging.debug(e)
             host["dnssec"] = dnssec
             host["addresses"] = []
             host["addresses"] = await get_a_records(hostname,
-                                              nameservers=nameservers,
-                                              resolver=resolver,
-                                              timeout=timeout)
+                                                    nameservers=nameservers,
+                                                    resolver=resolver,
+                                                    timeout=timeout)
             tlsa_records = await get_tlsa_records(hostname,
-                                            nameservers=nameservers,
-                                            timeout=timeout)
+                                                  nameservers=nameservers,
+                                                  timeout=timeout)
 
             if len(tlsa_records) > 0:
                 host["tlsa"] = tlsa_records
@@ -373,10 +374,9 @@ async def get_mx_hosts(domain: str, skip_tls: bool = False,
 
         for address in host["addresses"]:
             try:
-                reverse_hostnames = await get_reverse_dns(address,
-                                                    nameservers=nameservers,
-                                                    resolver=resolver,
-                                                    timeout=timeout)
+                reverse_hostnames = await get_reverse_dns(
+                    address, nameservers=nameservers, resolver=resolver,
+                    timeout=timeout)
             except DNSException:
                 reverse_hostnames = []
             if len(reverse_hostnames) == 0:
@@ -385,7 +385,8 @@ async def get_mx_hosts(domain: str, skip_tls: bool = False,
                     "records")
             for hostname in reverse_hostnames:
                 try:
-                    _addresses = await get_a_records(hostname, resolver=resolver)
+                    _addresses = await get_a_records(hostname,
+                                                     resolver=resolver)
                 except DNSException as warning:
                     warnings.append(str(warning))
                     _addresses = []
@@ -430,11 +431,11 @@ async def get_mx_hosts(domain: str, skip_tls: bool = False,
 
 
 async def check_mx(domain: str, approved_mx_hostnames: list[str] = None,
-             mta_sts_mx_patterns: list[str] = None,
-             skip_tls: bool = False,
-             nameservers: list[str] = None,
-             resolver: dns.resolver.Resolver = None,
-             timeout: float = 2.0) -> OrderedDict:
+                   mta_sts_mx_patterns: list[str] = None,
+                   skip_tls: bool = False,
+                   nameservers: list[str] = None,
+                   resolver: dns.resolver.Resolver = None,
+                   timeout: float = 2.0) -> OrderedDict:
     """
     Gets MX hostname and their addresses, or an empty list of hosts and an
     error if a DNS error occurs

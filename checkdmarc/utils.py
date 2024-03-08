@@ -75,9 +75,11 @@ def get_base_domain(domain: str) -> str:
     return psl.privatesuffix(domain) or domain
 
 
-async def query_dns(domain: str, record_type: str, nameservers: list[str] = None,
-              resolver: dns.resolver.Resolver = None,
-              timeout: float = 2.0, cache: ExpiringDict = None) -> list[str]:
+async def query_dns(domain: str, record_type: str,
+                    nameservers: list[str] = None,
+                    resolver: dns.resolver.Resolver = None,
+                    timeout: float = 2.0,
+                    cache: ExpiringDict = None) -> list[str]:
     """
     Queries DNS
 
@@ -134,8 +136,8 @@ async def query_dns(domain: str, record_type: str, nameservers: list[str] = None
 
 
 async def get_a_records(domain: str, nameservers: list[str] = None,
-                  resolver: dns.resolver.Resolver = None,
-                  timeout: float = 2.0) -> list[str]:
+                        resolver: dns.resolver.Resolver = None,
+                        timeout: float = 2.0) -> list[str]:
     """
     Queries DNS for A and AAAA records
 
@@ -173,8 +175,8 @@ async def get_a_records(domain: str, nameservers: list[str] = None,
 
 
 async def get_reverse_dns(ip_address: str, nameservers: list[str] = None,
-                    resolver: dns.resolver.Resolver = None,
-                    timeout: float = 2.0) -> list[str]:
+                          resolver: dns.resolver.Resolver = None,
+                          timeout: float = 2.0) -> list[str]:
     """
     Queries for an IP addresses reverse DNS hostname(s)
 
@@ -196,7 +198,7 @@ async def get_reverse_dns(ip_address: str, nameservers: list[str] = None,
         name = str(dns.reversename.from_address(ip_address))
         logging.debug(f"Getting PTR records for {ip_address}")
         hostnames = await query_dns(name, "PTR", nameservers=nameservers,
-                              resolver=resolver, timeout=timeout)
+                                    resolver=resolver, timeout=timeout)
     except dns.resolver.NXDOMAIN:
         return []
     except Exception as error:
@@ -206,8 +208,8 @@ async def get_reverse_dns(ip_address: str, nameservers: list[str] = None,
 
 
 async def get_txt_records(domain: str, nameservers: list[str] = None,
-                    resolver: dns.resolver.Resolver = None,
-                    timeout: float = 2.0) -> list[str]:
+                          resolver: dns.resolver.Resolver = None,
+                          timeout: float = 2.0) -> list[str]:
     """
     Queries DNS for TXT records
 
@@ -227,7 +229,7 @@ async def get_txt_records(domain: str, nameservers: list[str] = None,
     """
     try:
         records = await query_dns(domain, "TXT", nameservers=nameservers,
-                            resolver=resolver, timeout=timeout)
+                                  resolver=resolver, timeout=timeout)
     except dns.resolver.NXDOMAIN:
         raise DNSExceptionNXDOMAIN(f"The domain {domain} does not exist")
     except dns.resolver.NoAnswer:
@@ -240,9 +242,9 @@ async def get_txt_records(domain: str, nameservers: list[str] = None,
 
 
 async def get_nameservers(domain: str, approved_nameservers: list[str] = None,
-                    nameservers: list[str] = None,
-                    resolver: dns.resolver.Resolver = None,
-                    timeout: float = 2.0) -> dict:
+                          nameservers: list[str] = None,
+                          resolver: dns.resolver.Resolver = None,
+                          timeout: float = 2.0) -> dict:
     """
     Gets a list of nameservers for a given domain
 
@@ -266,8 +268,8 @@ async def get_nameservers(domain: str, approved_nameservers: list[str] = None,
     try:
 
         ns_records = await query_dns(domain, "NS",
-                               nameservers=nameservers,
-                               resolver=resolver, timeout=timeout)
+                                     nameservers=nameservers,
+                                     resolver=resolver, timeout=timeout)
     except dns.resolver.NXDOMAIN:
         raise DNSExceptionNXDOMAIN(
             f"The domain {domain} does not exist")
@@ -293,8 +295,8 @@ async def get_nameservers(domain: str, approved_nameservers: list[str] = None,
 
 
 async def get_mx_records(domain: str, nameservers: list[str] = None,
-                   resolver: dns.resolver.Resolver = None,
-                   timeout: float = 2.0) -> list[OrderedDict]:
+                         resolver: dns.resolver.Resolver = None,
+                         timeout: float = 2.0) -> list[OrderedDict]:
     """
     Queries DNS for a list of Mail Exchange hosts
 
@@ -317,7 +319,7 @@ async def get_mx_records(domain: str, nameservers: list[str] = None,
     try:
         logging.debug(f"Checking for MX records on {domain}")
         answers = await query_dns(domain, "MX", nameservers=nameservers,
-                            resolver=resolver, timeout=timeout)
+                                  resolver=resolver, timeout=timeout)
         if answers == ['0 ']:
             logging.debug("\"No Service\" MX record found")
             return []

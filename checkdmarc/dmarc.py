@@ -375,10 +375,10 @@ dmarc_tags = OrderedDict(adkim=OrderedDict(name="DKIM Alignment Mode",
 
 
 async def _query_dmarc_record(domain: str, nameservers: list[str] = None,
-                        resolver: dns.resolver.Resolver = None,
-                        timeout: float = 2.0,
-                        ignore_unrelated_records: bool = False
-                        ) -> Union[str, None]:
+                              resolver: dns.resolver.Resolver = None,
+                              timeout: float = 2.0,
+                              ignore_unrelated_records: bool = False
+                              ) -> Union[str, None]:
     """
     Queries DNS for a DMARC record
 
@@ -401,7 +401,7 @@ async def _query_dmarc_record(domain: str, nameservers: list[str] = None,
 
     try:
         records = await query_dns(target, "TXT", nameservers=nameservers,
-                            resolver=resolver, timeout=timeout)
+                                  resolver=resolver, timeout=timeout)
         for record in records:
             if record.startswith(txt_prefix):
                 dmarc_record_count += 1
@@ -431,8 +431,8 @@ async def _query_dmarc_record(domain: str, nameservers: list[str] = None,
     except dns.resolver.NoAnswer:
         try:
             records = await query_dns(domain, "TXT",
-                                nameservers=nameservers, resolver=resolver,
-                                timeout=timeout)
+                                      nameservers=nameservers,
+                                      resolver=resolver, timeout=timeout)
             for record in records:
                 if record.startswith(txt_prefix):
                     raise DMARCRecordInWrongLocation(
@@ -459,9 +459,10 @@ async def _query_dmarc_record(domain: str, nameservers: list[str] = None,
 
 
 async def query_dmarc_record(domain: str, nameservers: list[str] = None,
-                       resolver: dns.resolver.Resolver = None,
-                       timeout: float = 2.0,
-                       ignore_unrelated_records: bool = False) -> OrderedDict:
+                             resolver: dns.resolver.Resolver = None,
+                             timeout: float = 2.0,
+                             ignore_unrelated_records: bool = False
+                             ) -> OrderedDict:
     """
     Queries DNS for a DMARC record
 
@@ -496,8 +497,9 @@ async def query_dmarc_record(domain: str, nameservers: list[str] = None,
         ignore_unrelated_records=ignore_unrelated_records)
     try:
         root_records = await query_dns(domain, "TXT",
-                                 nameservers=nameservers, resolver=resolver,
-                                 timeout=timeout)
+                                       nameservers=nameservers,
+                                       resolver=resolver,
+                                       timeout=timeout)
         for root_record in root_records:
             if root_record.startswith("v=DMARC1"):
                 warnings.append(f"DMARC record at root of {domain} "
@@ -509,8 +511,9 @@ async def query_dmarc_record(domain: str, nameservers: list[str] = None,
         pass
 
     if record is None and domain != base_domain:
-        record = await _query_dmarc_record(base_domain, nameservers=nameservers,
-                                     resolver=resolver, timeout=timeout)
+        record = await _query_dmarc_record(base_domain,
+                                           nameservers=nameservers,
+                                           resolver=resolver, timeout=timeout)
         location = base_domain
     if record is None:
         raise DMARCRecordNotFound(
@@ -634,8 +637,8 @@ async def check_wildcard_dmarc_report_authorization(
     unrelated_records = []
     try:
         records = await query_dns(wildcard_target, "TXT",
-                            nameservers=nameservers, resolver=resolver,
-                            timeout=timeout)
+                                  nameservers=nameservers, resolver=resolver,
+                                  timeout=timeout)
 
         for record in records:
             if record.startswith("v=DMARC1"):
@@ -659,12 +662,14 @@ async def check_wildcard_dmarc_report_authorization(
     return True
 
 
-async def verify_dmarc_report_destination(source_domain: str,
-                                    destination_domain: str,
-                                    nameservers: list[str] = None,
-                                    ignore_unrelated_records: bool = False,
-                                    resolver: dns.resolver.Resolver = None,
-                                    timeout: float = 2.0) -> bool:
+async def verify_dmarc_report_destination(
+    source_domain: str,
+    destination_domain: str,
+    nameservers: list[str] = None,
+    ignore_unrelated_records: bool = False,
+    resolver: dns.resolver.Resolver = None,
+    timeout: float = 2.0
+) -> bool:
     """
       Checks if the report destination accepts reports for the source domain
       per RFC 7489, section 7.1
@@ -707,8 +712,8 @@ async def verify_dmarc_report_destination(source_domain: str,
         unrelated_records = []
         try:
             records = await query_dns(target, "TXT",
-                                nameservers=nameservers, resolver=resolver,
-                                timeout=timeout)
+                                      nameservers=nameservers,
+                                      resolver=resolver, timeout=timeout)
 
             for record in records:
                 if record.startswith("v=DMARC1"):
@@ -890,9 +895,9 @@ async def parse_dmarc_record(
                         timeout=timeout)
                 try:
                     hosts = await get_mx_records(email_domain,
-                                           nameservers=nameservers,
-                                           resolver=resolver,
-                                           timeout=timeout)
+                                                 nameservers=nameservers,
+                                                 resolver=resolver,
+                                                 timeout=timeout)
                     if len(hosts) == 0:
                         raise DMARCReportEmailAddressMissingMXRecords(
                             "The domain for rua email address "
@@ -934,9 +939,9 @@ async def parse_dmarc_record(
                         timeout=timeout)
                 try:
                     hosts = await get_mx_records(email_domain,
-                                           nameservers=nameservers,
-                                           resolver=resolver,
-                                           timeout=timeout)
+                                                 nameservers=nameservers,
+                                                 resolver=resolver,
+                                                 timeout=timeout)
                     if len(hosts) == 0:
                         raise DMARCReportEmailAddressMissingMXRecords(
                             "The domain for ruf email address "
@@ -989,10 +994,10 @@ async def parse_dmarc_record(
 
 
 async def get_dmarc_record(domain: str,
-                     include_tag_descriptions: bool = False,
-                     nameservers: list[str] = None,
-                     resolver: dns.resolver.Resolver = None,
-                     timeout: float = 2.0) -> OrderedDict:
+                           include_tag_descriptions: bool = False,
+                           nameservers: list[str] = None,
+                           resolver: dns.resolver.Resolver = None,
+                           timeout: float = 2.0) -> OrderedDict:
     """
     Retrieves a DMARC record for a domain and parses it
 
@@ -1025,14 +1030,14 @@ async def get_dmarc_record(domain: str,
         :exc:`checkdmarc.dmarc.DMARCReportEmailAddressMissingMXRecords`
     """
     query = await query_dmarc_record(domain, nameservers=nameservers,
-                               resolver=resolver, timeout=timeout)
+                                     resolver=resolver, timeout=timeout)
 
     tag_descriptions = include_tag_descriptions
 
     tags = await parse_dmarc_record(query["record"], query["location"],
-                              include_tag_descriptions=tag_descriptions,
-                              nameservers=nameservers, resolver=resolver,
-                              timeout=timeout)
+                                    include_tag_descriptions=tag_descriptions,
+                                    nameservers=nameservers, resolver=resolver,
+                                    timeout=timeout)
 
     return OrderedDict([("record",
                          query["record"]),
@@ -1041,11 +1046,11 @@ async def get_dmarc_record(domain: str,
 
 
 async def check_dmarc(domain: str, parked: bool = False,
-                include_dmarc_tag_descriptions: bool = False,
-                ignore_unrelated_records: bool = False,
-                nameservers: list[str] = None,
-                resolver: dns.resolver.Resolver = None,
-                timeout: float = 2.0) -> OrderedDict:
+                      include_dmarc_tag_descriptions: bool = False,
+                      ignore_unrelated_records: bool = False,
+                      nameservers: list[str] = None,
+                      resolver: dns.resolver.Resolver = None,
+                      timeout: float = 2.0) -> OrderedDict:
     """
         Returns a dictionary with a parsed DMARC record or an error
 

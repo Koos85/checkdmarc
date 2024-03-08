@@ -133,10 +133,12 @@ smtp_rpt_tags = OrderedDict(
 )
 
 
-async def query_smtp_tls_reporting_record(domain: str,
-                                    nameservers: list[str] = None,
-                                    resolver: dns.resolver.Resolver = None,
-                                    timeout: float = 2.0) -> OrderedDict:
+async def query_smtp_tls_reporting_record(
+    domain: str,
+    nameservers: list[str] = None,
+    resolver: dns.resolver.Resolver = None,
+    timeout: float = 2.0
+) -> OrderedDict:
     """
     Queries DNS for an SMTP TLS Reporting record
 
@@ -169,7 +171,7 @@ async def query_smtp_tls_reporting_record(domain: str,
 
     try:
         records = await query_dns(target, "TXT", nameservers=nameservers,
-                            resolver=resolver, timeout=timeout)
+                                  resolver=resolver, timeout=timeout)
         for record in records:
             if record.startswith(txt_prefix):
                 sts_record_count += 1
@@ -191,8 +193,8 @@ async def query_smtp_tls_reporting_record(domain: str,
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
         try:
             records = await query_dns(domain, "TXT",
-                                nameservers=nameservers, resolver=resolver,
-                                timeout=timeout)
+                                      nameservers=nameservers,
+                                      resolver=resolver, timeout=timeout)
             for record in records:
                 if record.startswith(txt_prefix):
                     raise SMTPTLSReportingRecordInWrongLocation(
@@ -297,9 +299,9 @@ def parse_smtp_tls_reporting_record(
 
 
 async def check_smtp_tls_reporting(domain: str,
-                             nameservers: list[str] = None,
-                             resolver: dns.resolver.Resolver = None,
-                             timeout: float = 2.0) -> OrderedDict:
+                                   nameservers: list[str] = None,
+                                   resolver: dns.resolver.Resolver = None,
+                                   timeout: float = 2.0) -> OrderedDict:
     """
     Returns a dictionary with a parsed MTA-STS policy or an error.
 

@@ -149,9 +149,9 @@ bimi_tags = OrderedDict(
 
 
 async def _query_bimi_record(domain: str, selector: str = "default",
-                       nameservers: list[str] = None,
-                       resolver: dns.resolver.Resolver = None,
-                       timeout: float = 2.0):
+                             nameservers: list[str] = None,
+                             resolver: dns.resolver.Resolver = None,
+                             timeout: float = 2.0):
     """
     Queries DNS for a BIMI record
 
@@ -175,7 +175,7 @@ async def _query_bimi_record(domain: str, selector: str = "default",
 
     try:
         records = await query_dns(target, "TXT", nameservers=nameservers,
-                            resolver=resolver, timeout=timeout)
+                                  resolver=resolver, timeout=timeout)
         for record in records:
             if record.startswith(txt_prefix):
                 bimi_record_count += 1
@@ -197,8 +197,9 @@ async def _query_bimi_record(domain: str, selector: str = "default",
     except dns.resolver.NoAnswer:
         try:
             records = await query_dns(domain, "TXT",
-                                nameservers=nameservers, resolver=resolver,
-                                timeout=timeout)
+                                      nameservers=nameservers,
+                                      resolver=resolver,
+                                      timeout=timeout)
             for record in records:
                 if record.startswith(txt_prefix):
                     raise BIMIRecordInWrongLocation(
@@ -221,9 +222,9 @@ async def _query_bimi_record(domain: str, selector: str = "default",
 
 
 async def query_bimi_record(domain: str, selector: str = "default",
-                      nameservers: list[str] = None,
-                      resolver: dns.resolver.Resolver = None,
-                      timeout: float = 2.0) -> OrderedDict:
+                            nameservers: list[str] = None,
+                            resolver: dns.resolver.Resolver = None,
+                            timeout: float = 2.0) -> OrderedDict:
     """
     Queries DNS for a BIMI record
 
@@ -252,12 +253,12 @@ async def query_bimi_record(domain: str, selector: str = "default",
     base_domain = get_base_domain(domain)
     location = domain.lower()
     record = await _query_bimi_record(domain, selector=selector,
-                                nameservers=nameservers, resolver=resolver,
-                                timeout=timeout)
+                                      nameservers=nameservers,
+                                      resolver=resolver, timeout=timeout)
     try:
         root_records = await query_dns(domain, "TXT",
-                                 nameservers=nameservers, resolver=resolver,
-                                 timeout=timeout)
+                                       nameservers=nameservers,
+                                       resolver=resolver, timeout=timeout)
         for root_record in root_records:
             if root_record.startswith("v=BIMI1"):
                 warnings.append(f"BIMI record at root of {domain} "
@@ -270,8 +271,8 @@ async def query_bimi_record(domain: str, selector: str = "default",
 
     if record is None and domain != base_domain and selector != "default":
         record = await _query_bimi_record(base_domain,
-                                    nameservers=nameservers, resolver=resolver,
-                                    timeout=timeout)
+                                          nameservers=nameservers,
+                                          resolver=resolver, timeout=timeout)
         location = base_domain
     if record is None:
         raise BIMIRecordNotFound(
@@ -374,10 +375,10 @@ def parse_bimi_record(
 
 
 async def check_bimi(domain: str, selector: str = "default",
-               include_tag_descriptions: bool = False,
-               nameservers: list[str] = None,
-               resolver: dns.resolver.Resolver = None,
-               timeout: float = 2.0) -> OrderedDict:
+                     include_tag_descriptions: bool = False,
+                     nameservers: list[str] = None,
+                     resolver: dns.resolver.Resolver = None,
+                     timeout: float = 2.0) -> OrderedDict:
     """
     Returns a dictionary with a parsed BIMI record or an error.
 
