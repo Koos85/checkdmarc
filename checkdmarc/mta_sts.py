@@ -8,7 +8,7 @@ import re
 from collections import OrderedDict
 
 import dns
-import requests
+import aiohttp
 from pyleri import (Grammar,
                     Regex,
                     Sequence,
@@ -286,7 +286,7 @@ def parse_mta_sts_record(
     return OrderedDict(tags=tags, warnings=warnings)
 
 
-def download_mta_sts_policy(domain: str) -> OrderedDict:
+async def download_mta_sts_policy(domain: str) -> OrderedDict:
     """
     Downloads a domains MTA-HTS policy
 
@@ -301,16 +301,17 @@ def download_mta_sts_policy(domain: str) -> OrderedDict:
     Raises:
         :exc:`checkdmarc.mta_sts.MTASTSPolicyDownloadError`
     """
+    policy = None
     warnings = []
     headers = {"User-Agent": USER_AGENT}
-    session = requests.Session()
-    session.headers = headers
     expected_content_type = "text/plain"
     url = f"https://mta-sts.{domain}/.well-known/mta-sts.txt"
     logging.debug(f"Attempting to download HTA-MTS policy from {url}")
     try:
-        response = session.get(url)
-        response.raise_for_status()
+        async with aiohttp.ClientSession(headers=headers) as session:
+            response = await session.get(url)
+            response.raise_for_status()
+            policy = await response.text()
         if "Content-Type" in response.headers:
             content_type = response.headers["Content-Type"].split(";")[0]
             content_type = content_type.strip()
@@ -324,7 +325,7 @@ def download_mta_sts_policy(domain: str) -> OrderedDict:
     except Exception as e:
         raise MTASTSPolicyDownloadError(str(e))
 
-    return OrderedDict(policy=response.text, warnings=warnings)
+    return OrderedDict(policy=policy, warnings=warnings)
 
 
 def parse_mta_sts_policy(policy: str) -> OrderedDict:
@@ -442,7 +443,7 @@ async def check_mta_sts(domain: str,
         warnings = mta_sts_record["warnings"]
         mta_sts_record = parse_mta_sts_record(mta_sts_record["record"])
         mta_sts_results["id"] = mta_sts_record["tags"]["id"]["value"]
-        policy = download_mta_sts_policy(domain)
+        policy = await download_mta_sts_policy(domain)
         warnings += policy["warnings"]
         policy = parse_mta_sts_policy(policy["policy"])
         warnings += policy["warnings"]

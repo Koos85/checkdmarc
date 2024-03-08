@@ -8,7 +8,7 @@ import re
 from collections import OrderedDict
 
 import dns
-import requests
+import aiohttp
 from pyleri import (Grammar,
                     Regex,
                     Sequence,
@@ -283,7 +283,7 @@ async def query_bimi_record(domain: str, selector: str = "default",
                         ("warnings", warnings)])
 
 
-def parse_bimi_record(
+async def parse_bimi_record(
         record: str,
         include_tag_descriptions: bool = False,
         syntax_error_marker: str = SYNTAX_ERROR_MARKER) -> OrderedDict:
@@ -320,8 +320,7 @@ def parse_bimi_record(
         :exc:`checkdmarc.bimi.SPFRecordFoundWhereBIMIRecordShouldBe`
     """
     logging.debug("Parsing the BIMI record")
-    session = requests.Session()
-    session.headers = {"User-Agent": USER_AGENT}
+    headers = {"User-Agent": USER_AGENT}
     spf_in_dmarc_error_msg = "Found a SPF record where a BIMI record " \
                              "should be; most likely, the _bimi " \
                              "subdomain record does not actually exist, " \
@@ -358,15 +357,17 @@ def parse_bimi_record(
             tags[tag]["description"] = bimi_tags[tag]["description"]
         if tag == "a" and tag_value != "":
             try:
-                response = session.get(tag_value)
-                response.raise_for_status()
+                async with aiohttp.ClientSession(headers=headers) as session:
+                    response = await session.get(tag_value)
+                    response.raise_for_status()
             except Exception as e:
                 warnings.append(f"Unable to download Authority Evidence at "
                                 f"{tag_value} - {str(e)}")
         elif tag == "e" and tag_value != "":
             try:
-                response = session.get(tag_value)
-                response.raise_for_status()
+                async with aiohttp.ClientSession(headers=headers) as session:
+                    response = session.get(tag_value)
+                    response.raise_for_status()
             except Exception as e:
                 warnings.append(f"Unable to download  "
                                 f"{tag_value} - {str(e)}")
@@ -420,7 +421,7 @@ async def check_bimi(domain: str, selector: str = "default",
             timeout=timeout)
         bimi_results["selector"] = selector
         bimi_results["record"] = bimi_query["record"]
-        parsed_bimi = parse_bimi_record(
+        parsed_bimi = await parse_bimi_record(
             bimi_results["record"],
             include_tag_descriptions=include_tag_descriptions)
         bimi_results["tags"] = parsed_bimi["tags"]
